@@ -19,7 +19,7 @@ Currently modelled processes:
 4. Additional metrics (confidence intervals around the expected value)
 4. Calculations for most likely winner and expected HP for the victor after the battle
 
-##Requirements
+## Requirements
 numpy >= 1.17.5
 matplotlib >= 3.1.3
 scipy >= 1.7.1
