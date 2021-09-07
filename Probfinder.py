@@ -442,11 +442,34 @@ class Calculator:
 
         # ------ Plot frame ------
 
-        tabControl = ttk.Notebook(plotframe)
+        self.tabControl = ttk.Notebook(plotframe)
 
-        tabprob = ttk.Frame(tabControl)
-        tabcum = ttk.Frame(tabControl)
+        tabhelp = ttk.Frame(self.tabControl)
+        tabprob = ttk.Frame(self.tabControl)
+        tabcum = ttk.Frame(self.tabControl)
 
+        #Help tab
+        def create_table_row(master, row, name, desc, optional, type, example, note=''):
+            labels = [ttk.Label(master, text=name, relief=tk.RAISED),
+                      ttk.Label(master, text=desc, relief=tk.RAISED),
+                      ttk.Label(master, text=optional, relief=tk.RAISED),
+                      ttk.Label(master, text=type, relief=tk.RAISED),
+                      ttk.Label(master, text=example, relief=tk.RAISED),
+                      ttk.Label(master, text=note, relief=tk.RAISED)]
+            widths = [15, 40, 5, 30, 15, 30]
+            for column, (label, width) in enumerate(zip(labels, widths)):
+                label.config(width=width, font=("Courier", 10))
+                label.grid(row=row, column=column)
+
+        help_table = {}
+
+        with open(f'help_table.json', 'r') as file:
+            help_table = json.load(file)
+
+        for (key, vals) in help_table.items():
+            create_table_row(tabhelp, int(key), vals[0], vals[1], vals[2], vals[3], vals[4], vals[5])
+
+        # Density tab
         self.figprob = Figure(figsize=(4, 4), dpi=100)
         self.subplotprob = self.figprob.add_subplot(111)
         self.canvasprob = FigureCanvasTkAgg(self.figprob, master=tabprob)  # A tk.DrawingArea.
@@ -455,6 +478,7 @@ class Calculator:
         self.toolbarprob.update()
         self.canvasprob.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
+        # Cumulative density tab
         self.figcum = Figure(figsize=(4, 4), dpi=100)
         self.subplotcum = self.figcum.add_subplot(111)
         self.canvascum = FigureCanvasTkAgg(self.figcum, master=tabcum)  # A tk.DrawingArea.
@@ -463,9 +487,10 @@ class Calculator:
         self.toolbarcum.update()
         self.canvascum.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
-        tabControl.add(tabprob, text='Density')
-        tabControl.add(tabcum, text='Cumulative')
-        tabControl.pack(expand=1, fill="both")
+        self.tabControl.add(tabhelp, text='Help')
+        self.tabControl.add(tabprob, text='Density')
+        self.tabControl.add(tabcum, text='Cumulative')
+        self.tabControl.pack(expand=1, fill="both")
 
         # ------ Info frame ------
         self.expval_label_var = tk.StringVar()
@@ -608,6 +633,7 @@ class Calculator:
         self.subplotcum.set_title('Cumulative probability')
         self.subplotcum.legend([self.char1.get_dict()['Name'], self.char2.get_dict()['Name']])
         self.canvascum.draw()
+        self.tabControl.select(1)
 
     def calculate(self):
         try:

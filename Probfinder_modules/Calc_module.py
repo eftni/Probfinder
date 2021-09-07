@@ -30,39 +30,45 @@ def generating_func(AC, saves, vuln, res, imm, conc, DR, attack):
     dice = attack['Damage dice']
     prec_dice = attack['Precision dice']
     crit_mult = attack['Critical multiplier']
+    multi = attack['Multiattack']
 
-    hit_diff = AC - (TH + 10)
-    hit_prob = max(0, min(0.55 - hit_diff * 0.05, 1.0))
-    miss_prob = 1 - hit_prob
-    crit_range_size = max(0, 20 - crit_thresh + 1)
-    hit_range = max(0, min(11 - hit_diff, 20))
-    crit_prob = (crit_range_size / 20) * hit_prob
-    norm_prob = (hit_range - crit_range_size) / 20 + (crit_range_size / 20) * miss_prob
-    hit_prob = norm_prob+crit_prob
+    attack_poly = Polynomial([1])
+    for att_num in range(0, multi):
+        hit_diff = AC - (TH - 5*att_num + 10)
+        hit_prob = max(0, min(0.55 - hit_diff * 0.05, 1.0))
+        miss_prob = 1 - hit_prob
+        crit_range_size = max(0, 20 - crit_thresh + 1)
+        hit_range = max(0, min(11 - hit_diff, 20))
+        crit_prob = (crit_range_size / 20) * hit_prob
+        norm_prob = (hit_range - crit_range_size) / 20 + (crit_range_size / 20) * miss_prob
+        hit_prob = norm_prob+crit_prob
+        if hit_prob < 0.01:
+            continue
 
-    dice_func = np.array([1])
-    for (dn, df, t) in dice:
-        term_density = get_density(dn, df)
-        term_poly = Polynomial(dice_func)*Polynomial(term_density)
-        dice_func = term_poly.coef.copy()
-    temp = np.zeros(dice_func.shape[0] + static)
-    for i, coeff in enumerate(dice_func):
-        temp[i+static] = coeff
-    dice_func = temp.copy()
-    crit_func = np.zeros((dice_func.shape[0]-1)*crit_mult+1)
-    for i, coeff in enumerate(dice_func):
-        crit_func[i*crit_mult] = coeff
-    dice_func.resize(crit_func.shape[0])
-    full_dice_gen = dice_func*(norm_prob/hit_prob) + crit_func*(crit_prob/hit_prob)
-    prec_func = np.array([1])
-    for (dn, df, t) in prec_dice:
-        term_density = get_density(dn, df)
-        term_poly = Polynomial(prec_func) * Polynomial(term_density)
-        prec_func = term_poly.coef
-    full_poly = Polynomial(full_dice_gen)*Polynomial(prec_func)
-    full_poly = full_poly*hit_prob
-    full_poly.coef[0] = miss_prob
-    return full_poly
+        dice_func = np.array([1])
+        for (dn, df, t) in dice:
+            term_density = get_density(dn, df)
+            term_poly = Polynomial(dice_func)*Polynomial(term_density)
+            dice_func = term_poly.coef.copy()
+        temp = np.zeros(dice_func.shape[0] + static)
+        for i, coeff in enumerate(dice_func):
+            temp[i+static] = coeff
+        dice_func = temp.copy()
+        crit_func = np.zeros((dice_func.shape[0]-1)*crit_mult+1)
+        for i, coeff in enumerate(dice_func):
+            crit_func[i*crit_mult] = coeff
+        dice_func.resize(crit_func.shape[0])
+        full_dice_gen = dice_func*(norm_prob/hit_prob) + crit_func*(crit_prob/hit_prob)
+        prec_func = np.array([1])
+        for (dn, df, t) in prec_dice:
+            term_density = get_density(dn, df)
+            term_poly = Polynomial(prec_func) * Polynomial(term_density)
+            prec_func = term_poly.coef
+        full_poly = Polynomial(full_dice_gen)*Polynomial(prec_func)
+        full_poly = (full_poly*hit_prob)*(1-conc/100)
+        full_poly.coef[0] = miss_prob+(hit_prob*conc/100)
+        attack_poly = attack_poly*full_poly
+    return attack_poly
 
 
 def calc_combat_len(HP, AC, saves, vuln, res, imm, conc, DR, attacks):
@@ -86,7 +92,7 @@ def calc_combat_len(HP, AC, saves, vuln, res, imm, conc, DR, attacks):
         if sum_prob >= 0.999:
             break
         curr_turn_func = curr_turn_func*turn_func
-    return  turn_probs
+    return turn_probs
 
 
 def sim_combat_len(HP, AC, saves, vuln, res, imm, conc, DR, attacks, sim_num):
@@ -106,18 +112,22 @@ def sim_combat_len(HP, AC, saves, vuln, res, imm, conc, DR, attacks, sim_num):
             turn += 1
             att_idx = np.random.choice(len(attacks), p=att_probs)
             attack = attacks[att_idx]
-            roll = rng.integers(low=1, high=21, size=1)
-            if roll + attack['To hit'] >= AC:
-                mult = 1
-                if roll >= attack['Critical thresh'] and rng.integers(low=1, high=21, size=1) + attack['To hit'] >= AC:
-                    mult = attack['Critical multiplier']
-                die_dmg = 0
-                for (dn, df, t) in attack['Damage dice']:
-                    die_dmg += np.sum(rng.integers(low=1, high=df+1, size=dn))
-                prec_dmg = 0
-                for (dn, df, t) in attack['Precision dice']:
-                    prec_dmg += np.sum(rng.integers(low=1, high=df+1, size=dn))
-                dmg += (die_dmg + attack['Damage bonus'])*mult + prec_dmg
+            for att_num in range(0, attack['Multiattack']):
+                roll = rng.integers(low=1, high=21, size=1)
+                if roll + attack['To hit'] - att_num*5 >= AC:
+                    if conc != 0:
+                        if rng.integers(low=1, high=101, size=1) <= conc:
+                            continue
+                    mult = 1
+                    if roll >= attack['Critical thresh'] and rng.integers(low=1, high=21, size=1) + attack['To hit'] - att_num*5 >= AC:
+                        mult = attack['Critical multiplier']
+                    die_dmg = 0
+                    for (dn, df, t) in attack['Damage dice']:
+                        die_dmg += np.sum(rng.integers(low=1, high=df+1, size=dn))
+                    prec_dmg = 0
+                    for (dn, df, t) in attack['Precision dice']:
+                        prec_dmg += np.sum(rng.integers(low=1, high=df+1, size=dn))
+                    dmg += (die_dmg + attack['Damage bonus'])*mult + prec_dmg
         if turn not in turn_probs.keys():
             turn_probs[turn] = 0
         turn_probs[turn] += 1/sim_num
