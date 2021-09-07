@@ -26,6 +26,7 @@ Currently modelled processes:
 ## Notes
 Some abilities (such as ones that change enemy AC) are best modelled by an equivalent change to the to-hit bonus of the attack.
 Damage types are not hardcoded into the script, and are compared via string matching. This means that if damage types are specified consistently, (i.e. DR: 5/Good, damage dice: 2d6/Good), they will work. This means that damage types can be marked in any way the user sees fit. (Fire, F, etc.)  
+
 If a character has multiple attack types, a relative frequency should also be given. This represents the likelyhood of the character using that attack. For instance, if one attack has a RF of 5 and another 2, then the first attack is used with P = 5/7 ~= 0.71, the second with P = 2/7 ~= 0.28. 
 
 ## Implementation notes
