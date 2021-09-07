@@ -5,8 +5,8 @@ Probfinder is a python script for calculating the expected length of a combat en
 Currently, Probfinder only supports 1v1 duels, as well as static conditions.
 To-hit bonuses, AC and damage aren't allowed to change as the combat progresses.
 As such, Probfinder can only simulate attacks that don't inflict status effects on an opponent. (e.g. staggered, nauseated, etc.)
-A simulation mode is also included as a backup, however this only supports the features that the calculator does.
-Also, simulation is much slower than the calculator.
+
+A simulation mode is also included as a backup, however this only supports the features that the calculator does. Also, simulation is much slower than the calculator.
 
 Currently modelled processes:
 1. Attack rolls, with confirmed and unconfirmed criticals
