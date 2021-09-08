@@ -15,13 +15,14 @@ Currently modelled processes:
 4. Support for multiple attack types
 5. Multiattack
 6. Concealment
+7. Support for vulnerability, resistance, immunity
+8. Support for saving throws to halve or negate damage
 
 ## Planned features
-1. Support for saving throws to halve or negate damage
-2. Support for vulnerability, resistance, immunity and DR
-3. Support for changing hit-probabilities (e.g. conditions)
-4. Additional metrics (confidence intervals around the expected value)
-5. Calculations for most likely winner and expected HP for the victor after the battle
+1. Support for DR
+2. Support for changing hit-probabilities (e.g. conditions)
+3. Additional metrics (confidence intervals around the expected value)
+4. Calculations for most likely winner and expected HP for the victor after the battle
 
 ## Notes
 Some abilities (such as ones that change enemy AC) are best modelled by an equivalent change to the to-hit bonus of the attack.

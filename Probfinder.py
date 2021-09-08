@@ -228,7 +228,14 @@ class Calculator:
                 attack['Precision dice'] = prec_dice
 
                 static = self.static_entry.get()
-                attack['Damage bonus'] = int(static) if len(static) != 0 else 0
+                if len(static) != 0:
+                    if '/' in static:
+                        val, type = static.split('/')
+                    else:
+                        val, type = static, ''
+                    attack['Damage bonus'] = (int(val), type)
+                else:
+                    attack['Damage bonus'] = (0, '')
 
                 if len(dmg_string) == 0 and len(prec_string) == 0 and len(static) == 0:
                     self.status_label_var.set(f'You must set some form of damage!')
@@ -298,7 +305,11 @@ class Calculator:
 
                 self.dmg_entry.insert(0, self.convert_dice(new_attack['Damage dice']))
                 self.prec_entry.insert(0, self.convert_dice(new_attack['Precision dice']))
-                self.static_entry.insert(0, str(new_attack['Damage bonus']))
+                if new_attack['Damage bonus'][1] != '':
+                    new_dmg_bonus = f'{new_attack["Damage bonus"][0]}/{new_attack["Damage bonus"][1]}'
+                else:
+                    new_dmg_bonus = str(new_attack["Damage bonus"][0])
+                self.static_entry.insert(0, new_dmg_bonus)
                 self.crit_entry.insert(0, str(new_attack['Critical thresh']))
                 self.mult_entry.insert(0, str(new_attack['Critical multiplier']))
                 if new_attack['Save'][0] != '':
@@ -652,7 +663,8 @@ class Calculator:
             char1_turns, char1_ps = list(char1_probs.keys()), list(char1_probs.values())
             char2_turns, char2_ps = list(char2_probs.keys()), list(char2_probs.values())
             self.update_plot(char1_turns, char1_ps, char2_turns, char2_ps)
-        except KeyError:
+        except KeyError as e:
+            print(f'KEYERROR: {e}')
             self.status_label_var.set('Not every character has been set yet!')
 
     def simulate(self):
